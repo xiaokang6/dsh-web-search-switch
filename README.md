@@ -114,6 +114,7 @@ pnpm add github:xiaokang6/dsh-web-search-switch
 | 搜索报“还没有配置 API Key（XXX_API_KEY）” | 在搜索源页面填入对应密钥并保存；或先切回官方。 |
 | 搜索报 HTTP 401 / 403 | 密钥无效、过期或没有该服务的权限；在对应服务控制台确认。 |
 | SearXNG 报需要实例地址 | 高级设置里填 `https://searx.example.com` 这类地址（不要带 `/search`）。 |
+| `网页获取` 报 `/v1/fetch` 404，或搜索报 `/v1/search` 404 | 官方「网页搜索」卡片里开启了「使用新版 Web 搜索 API」，且地址填成了 `https://ollama.com/v1`。Ollama 只有 `POST /api/web_search`，没有 DeepSeek 的 `/v1/search`、`/v1/fetch`。关掉那个开关（抓取回到本地 `http`），搜索改用「搜索源 → Ollama」。 |
 | 页面里看不到「搜索源」卡片 | 插件没加载：查看「已安装插件」里是否有 `dsh-web-search-switch` 且开关为开；首次安装后需要重启。 |
 | 搜索超时 | 调大高级设置里的超时，或检查网络/代理。 |
 

@@ -102,6 +102,7 @@ That plugin does run on the desktop: desktop and Web/CLI share one profile forma
 | "has no API key for XXX_API_KEY" | Fill the key on the Search source page and save, or switch back to official. |
 | HTTP 401 / 403 | Invalid or expired key, or no access to that service. |
 | SearXNG asks for an instance | Enter the instance root (no `/search`) in Advanced. |
+| `web_fetch` fails with `/v1/fetch` 404 (or search with `/v1/search`) | The built-in "Use the new Web Search API" switch is on with its base URL set to `https://ollama.com/v1`. Ollama only serves `POST /api/web_search`; it has no DeepSeek `/v1/search` or `/v1/fetch`. Turn that switch off (fetch returns to the local `http` provider) and search through Search source → Ollama instead. |
 | No Search source card | The plugin is not loaded; check Installed plugins and the toggle; restart after the first install. |
 
 ## License

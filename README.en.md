@@ -32,7 +32,26 @@ This plugin turns the source into a setting:
 
 ## Install
 
-1. Add the package to a profile (replace `<profile>` with your profile directory, e.g. `%DSH_HOME%\profiles\desktop`):
+Replace `<profile>` with your profile directory: on desktop usually `%DSH_HOME%\profiles\desktop`, for `dsh web` whichever profile that launch uses.
+
+### From GitHub
+
+```powershell
+cd <profile>
+pnpm add github:xiaokang6/dsh-web-search-switch
+```
+
+Then add `dsh-web-search-switch` to the profile `package.json`:
+
+```json
+"dsh": { "profile": { "bundles": ["...existing bundles...", "dsh-web-search-switch"] } }
+```
+
+The Plugins page's installer accepts the repository address too and enables the bundle for you.
+
+### From a local checkout (development / link)
+
+1. Add the package to the profile:
 
    ```powershell
    node scripts/install.mjs --profile <profile>
@@ -47,7 +66,9 @@ This plugin turns the source into a setting:
    pnpm install
    ```
 
-3. Restart DeepSeek Harness. The Plugins page then shows a **Search source** card under Built-in plugin settings.
+### Restart once
+
+Restart DeepSeek Harness. The Plugins page then shows a **Search source** card under Built-in plugin settings.
 
 The restart is only for the first install; provider switches, keys, and limits apply immediately afterwards.
 

@@ -30,11 +30,28 @@ DSH 自带的 `web_search` 只走 DeepSeek 官方搜索（`deepseek-official`，
 | 智谱 Web Search | `search-zhipu` | `ZHIPU_API_KEY` | `https://open.bigmodel.cn/api/paas/v4/web_search` |
 | SearXNG（自建） | `search-searxng` | `SEARXNG_API_KEY`（可选） | 你的实例地址 + `/search` |
 
-## 安装（桌面端 / Web）
+## 安装
 
 把 `<profile>` 换成你的 profile 目录：桌面端一般是 `%DSH_HOME%\profiles\desktop`（默认 `C:\Users\<你>\.dsh\profiles\desktop`），Web 端是 `dsh web` 使用的那个 profile。
 
-1. 把插件作为本地依赖加入 profile：
+### 方式一：从 GitHub 安装
+
+```powershell
+cd <profile>
+pnpm add github:xiaokang6/dsh-web-search-switch
+```
+
+然后把 `dsh-web-search-switch` 加进 profile `package.json` 的 `dsh.profile.bundles`：
+
+```json
+"dsh": { "profile": { "bundles": ["...原有 bundle...", "dsh-web-search-switch"] } }
+```
+
+也可以直接用 DSH 插件页的「添加插件」填仓库地址，由插件管理器完成安装与启用。
+
+### 方式二：本地目录（开发 / link）
+
+1. 把本仓库作为本地依赖加入 profile：
 
    ```powershell
    node scripts/install.mjs --profile <profile>
@@ -51,7 +68,9 @@ DSH 自带的 `web_search` 只走 DeepSeek 官方搜索（`deepseek-official`，
 
    （DSH 自带 pnpm 时，用启动器提供的 pnpm 即可。）
 
-3. 重启 DeepSeek Harness。之后打开侧边栏「插件」，在「内置插件配置」里会多出 **搜索源** 卡片。
+### 最后一步：重启
+
+重启 DeepSeek Harness。之后打开侧边栏「插件」，在「内置插件配置」里会多出 **搜索源** 卡片。
 
 > 只在第一次安装时需要重启；之后切换搜索源、改密钥、改结果数都在设置页完成并立即生效。
 

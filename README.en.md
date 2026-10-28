@@ -1,0 +1,88 @@
+# dsh-web-search-switch
+
+> Pick the `web_search` source from a settings page in DeepSeek Harness (desktop and Web): DeepSeek official, Ollama, Tavily, Brave, Exa, Serper, Bocha, Zhipu, SearXNG.
+
+![Plugins page entry](docs/plugins-page.png)
+
+## Why
+
+DSH's built-in `web_search` only runs on DeepSeek official search (`deepseek-official`, needing `DEEPSEEK_API_KEY` or a DeepSeek Account sign-in). The community plugin [`dsh-web-search-ollama`](https://github.com/sryimnoob123/dsh-web-search-ollama) can route it to Ollama, but switching means editing `cordis.patch.yml`, setting a global environment variable, disabling the official provider, and restarting — and only one of the two can be active.
+
+This plugin turns the source into a setting:
+
+- **One page**: Plugins → Built-in plugin settings → Search source, or Settings → Built-in plugins → Search source. Saving applies to the next search; no restart.
+- **Official and third-party side by side**: switch back to DeepSeek official at any time without uninstalling anything.
+- **Keys never reach the config file**: API keys go through the DSH credentials service (`.credentials.yaml`); the page only reports configured / not configured.
+- **No silent fallback**: a selected source without a key fails with an error that names the missing reference and where to set it.
+
+## Supported sources
+
+| Option | Provider id | Default credential | Default endpoint |
+| --- | --- | --- | --- |
+| DeepSeek official · Messages search | `deepseek-official` | `DEEPSEEK_API_KEY` (or Account sign-in) | built in |
+| DeepSeek official · Search API | `deepseek-search-api` | `DEEPSEEK_API_KEY` | built in |
+| Ollama Web Search | `search-ollama` | `OLLAMA_API_KEY` | `https://ollama.com/api/web_search` |
+| Tavily | `search-tavily` | `TAVILY_API_KEY` | `https://api.tavily.com/search` |
+| Brave Search | `search-brave` | `BRAVE_API_KEY` | `https://api.search.brave.com/res/v1/web/search` |
+| Exa | `search-exa` | `EXA_API_KEY` | `https://api.exa.ai/search` |
+| Serper (Google) | `search-serper` | `SERPER_API_KEY` | `https://google.serper.dev/search` |
+| Bocha | `search-bocha` | `BOCHA_API_KEY` | `https://api.bochaai.com/v1/web-search` |
+| Zhipu Web Search | `search-zhipu` | `ZHIPU_API_KEY` | `https://open.bigmodel.cn/api/paas/v4/web_search` |
+| SearXNG (self-hosted) | `search-searxng` | `SEARXNG_API_KEY` (optional) | your instance + `/search` |
+
+## Install
+
+1. Add the package to a profile (replace `<profile>` with your profile directory, e.g. `%DSH_HOME%\profiles\desktop`):
+
+   ```powershell
+   node scripts/install.mjs --profile <profile>
+   ```
+
+   `--dry-run` prints the change without writing. The script writes a `link:` dependency and appends the bundle row, UTF-8 without BOM.
+
+2. Install dependencies:
+
+   ```powershell
+   cd <profile>
+   pnpm install
+   ```
+
+3. Restart DeepSeek Harness. The Plugins page then shows a **Search source** card under Built-in plugin settings.
+
+The restart is only for the first install; provider switches, keys, and limits apply immediately afterwards.
+
+## Use
+
+1. Plugins → Built-in plugin settings → Search source (or Settings → Built-in plugins → Search source).
+2. Pick a source. Third-party sources show an API key field; paste the key.
+3. Save. The "Active" line updates and the next `web_search` uses it.
+4. To go back: pick "DeepSeek official · Messages search" and save.
+
+![Search source page](docs/detail.png)
+
+Advanced fields: results per search (1–20, default 5), timeout (5–120 s, default 20 s), and the endpoint override — required for SearXNG, useful for proxies or mirrors elsewhere.
+
+## How it works
+
+- Host half (`lib/index.js`) registers eight search providers on `ctx.web`. Ids use a `search-` prefix so they never collide with the built-ins or with `dsh-web-search-ollama`'s `ollama`.
+- The settings page writes the chosen id into the `web` entry's `searchProvider` — the same mechanism as the official settings page — and config-editor applies it live.
+- API keys are resolved per search from the credentials service, so rotation needs no restart.
+- Browser half (`lib/client.js`) is a hand-written DSH client bundle registered into `plugins.item` and `settings.plugins.tab`; it requires only the platform `react`.
+
+## Relationship to `dsh-web-search-ollama`
+
+That plugin does run on the desktop: desktop and Web/CLI share one profile format and one `ctx.web` seam. But it registers a single `ollama` provider and switching requires YAML edits, a global `setx` variable, disabling official search, and a restart. This plugin adds the same Ollama access **plus** a settings page that switches among official and other APIs. Do not install both: no id collision occurs (`search-ollama` vs `ollama`), but the page would list two Ollama entries. If you previously applied that plugin's patch (`searchProvider: ollama`, `disabled: true`) or `DSH_WEB_SEARCH_PROVIDER`, remove those overrides after installing this one.
+
+## Troubleshooting
+
+| Symptom | Fix |
+| --- | --- |
+| `WEB_PROVIDER_CONFIGURED_MISSING` after saving | The selected provider is not loaded: enable the plugin, check that the profile bundle list contains `dsh-web-search-switch`, restart. |
+| "has no API key for XXX_API_KEY" | Fill the key on the Search source page and save, or switch back to official. |
+| HTTP 401 / 403 | Invalid or expired key, or no access to that service. |
+| SearXNG asks for an instance | Enter the instance root (no `/search`) in Advanced. |
+| No Search source card | The plugin is not loaded; check Installed plugins and the toggle; restart after the first install. |
+
+## License
+
+MIT

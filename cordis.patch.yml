@@ -1,0 +1,18 @@
+# dsh-web-search-switch — bundle patch: mount the provider pack.
+#
+# The row is host-plane: it registers one web-search provider per third-party
+# backend on the harness `web` seam (`ctx.web`). It deliberately does NOT
+# change `web.searchProvider`: the base bundle keeps DeepSeek official as the
+# default, and the settings page (Settings > Built-in plugins > Web search
+# switch) writes the selection from the UI.
+#
+# Providers this row registers:
+#   search-ollama   search-tavily   search-brave   search-exa
+#   search-serper   search-bocha    search-zhipu   search-searxng
+#
+# The official providers (deepseek-official, deepseek-search-api) stay owned by
+# their own built-in rows; the settings page lists them as selectable targets.
+
+- insert:
+    - id: web-search-switch
+      name: dsh-web-search-switch

@@ -1,6 +1,6 @@
 # dsh-web-search-switch
 
-> 在 DeepSeek Harness 桌面端 / Web 端里，用设置页面一键切换 `web_search` 的搜索源：官方 DeepSeek、Ollama、Tavily、Brave、Exa、Serper、博查、智谱、SearXNG。
+> 在 DeepSeek Harness 桌面端 / Web 端里，用设置页面一键切换 `web_search` 的搜索源：官方 DeepSeek、Ollama、Tavily、Brave、Exa、Serper、博查、智谱、SearXNG；以及 `web_fetch` 的抓取源：内置本地抓取、Ollama Web Fetch、DeepSeek Fetch API。
 
 ![插件页入口](docs/plugins-page.png)
 
@@ -29,6 +29,22 @@ DSH 自带的 `web_search` 只走 DeepSeek 官方搜索（`deepseek-official`，
 | 博查 Bocha | `search-bocha` | `BOCHA_API_KEY` | `https://api.bochaai.com/v1/web-search` |
 | 智谱 Web Search | `search-zhipu` | `ZHIPU_API_KEY` | `https://open.bigmodel.cn/api/paas/v4/web_search` |
 | SearXNG（自建） | `search-searxng` | `SEARXNG_API_KEY`（可选） | 你的实例地址 + `/search` |
+
+## 支持的抓取源（web_fetch）
+
+`web_fetch` 的提供方也在这一页选择。内置 `http` 与 Ollama 抓取都不需要手改配置文件。
+
+| 设置页选项 | Provider id | 默认凭据引用 | 默认端点 |
+| --- | --- | --- | --- |
+| 内置 HTTP 抓取（本地） | `http` | 不需要 | 内置 |
+| Ollama Web Fetch | `fetch-ollama` | `OLLAMA_API_KEY` | `https://ollama.com/api/web_fetch` |
+| DeepSeek 官方 · Fetch API | `deepseek-fetch-api` | DeepSeek 搜索凭据引用 | 内置 |
+
+- **内置 `http`**：本地抓取单个 URL 并转成文本，零密钥、无外部依赖，适合大多数场景。
+- **`fetch-ollama`**：调用 Ollama 的抓取 API，返回它抽取好的正文与链接，比本地抓取干净；与 Ollama 搜索共用同一把 `OLLAMA_API_KEY`。
+- **`deepseek-fetch-api`**：内置的 DeepSeek Fetch API，需要一把有效的 DeepSeek 密钥；密钥无效时 `web_fetch` 会直接 401。
+
+> 设置页里的「启用新版 Web 搜索 API」开关会**同时**改写 `searchProvider` 和 `fetchProvider`（两套官方 provider 成对切换），因此它无法把抓取单独设成 `http` 或 `fetch-ollama`。要「Ollama 搜索 + 内置抓取」这类组合，用本页的抓取源选择。
 
 ## 安装
 
@@ -78,8 +94,9 @@ pnpm add github:xiaokang6/dsh-web-search-switch
 
 1. 侧边栏「插件」→「内置插件配置」→「搜索源」（也可以从「设置 → 内置插件 → 搜索源」进入）。
 2. 选中一个搜索源。第三方服务会显示 API Key 输入框，把密钥粘贴进去。
-3. 点「保存」。页面顶部「当前生效」会更新，下一次 `web_search` 就用新的搜索源。
-4. 想切回官方：选中「DeepSeek 官方 · Messages 搜索」→ 保存。
+3. 在同一页的「抓取提供方」里选 `web_fetch` 用的服务：内置 HTTP 抓取、Ollama Web Fetch 或 DeepSeek Fetch API。
+4. 点「保存」。页面顶部「当前生效」会更新，下一次 `web_search` / `web_fetch` 就用新的提供方。
+5. 想切回官方：选中「DeepSeek 官方 · Messages 搜索」→ 保存。
 
 ![搜索源设置页](docs/detail.png)
 
@@ -95,8 +112,8 @@ pnpm add github:xiaokang6/dsh-web-search-switch
 
 ## 工作原理（简要）
 
-- 宿主侧（`lib/index.js`）在 `ctx.web` 上注册 8 个搜索 provider，id 统一带 `search-` 前缀，避免与内置 provider（`deepseek-official`、`deepseek-search-api`）以及 `dsh-web-search-ollama` 的 `ollama` 冲突。
-- 设置页把选中的 provider id 写进 **`web` 条目的 `searchProvider`**（DSH 官方设置页的同一机制），配置改动由 config-editor 立即应用。
+- 宿主侧（`lib/index.js`）在 `ctx.web` 上注册 8 个搜索 provider（id 统一带 `search-` 前缀）和 1 个抓取 provider `fetch-ollama`，避免与内置 provider（`deepseek-official`、`deepseek-search-api`、`http`、`deepseek-fetch-api`）以及 `dsh-web-search-ollama` 的 `ollama` 冲突。
+- 设置页把选中的 id 写进 **`web` 条目的 `searchProvider` / `fetchProvider`**（DSH 官方设置页的同一机制），配置改动由 config-editor 立即应用。
 - 密钥写入 DSH 凭据服务，provider 每次搜索时重新解析，因此轮换密钥无需重启。
 - 浏览器侧（`lib/client.js`）是手写的 dsh client bundle，注册到 `plugins.item` 和 `settings.plugins.tab` 两个 slot，只依赖平台内置的 `react`。
 
@@ -115,6 +132,7 @@ pnpm add github:xiaokang6/dsh-web-search-switch
 | 搜索报 HTTP 401 / 403 | 密钥无效、过期或没有该服务的权限；在对应服务控制台确认。 |
 | SearXNG 报需要实例地址 | 高级设置里填 `https://searx.example.com` 这类地址（不要带 `/search`）。 |
 | `网页获取` 报 `/v1/fetch` 404，或搜索报 `/v1/search` 404 | 官方「网页搜索」卡片里开启了「使用新版 Web 搜索 API」，且地址填成了 `https://ollama.com/v1`。Ollama 只有 `POST /api/web_search`，没有 DeepSeek 的 `/v1/search`、`/v1/fetch`。关掉那个开关（抓取回到本地 `http`），搜索改用「搜索源 → Ollama」。 |
+| `web_fetch` 报 `HTTP 401 ... api key: sk-**** 无效` | 抓取提供方还是 `deepseek-fetch-api`，而凭据库里没有可用的 DeepSeek 密钥。在「抓取提供方」里改选内置 `http`（零密钥）或 `fetch-ollama`，保存即可。 |
 | 页面里看不到「搜索源」卡片 | 插件没加载：查看「已安装插件」里是否有 `dsh-web-search-switch` 且开关为开；首次安装后需要重启。 |
 | 搜索超时 | 调大高级设置里的超时，或检查网络/代理。 |
 
@@ -126,8 +144,8 @@ pnpm add github:xiaokang6/dsh-web-search-switch
 
 本仓库的验证覆盖：
 
-- 宿主：本地 mock HTTP 服务逐一对 8 个 provider 断言请求方法/鉴权头/请求体/结果映射、缺 Key、HTTP 错误、取消、非法地址。
-- 客户端：真实 `lib/client.js` 在 jsdom + React 18 中挂载，模拟选择搜索源、输入密钥、保存，断言写入 `web`/本插件命名空间与凭据服务。
+- 宿主：`node test/smoke.mjs` 用桩模块跑真实 `lib/index.js`，断言 8 个搜索 provider 与 `fetch-ollama` 的注册、请求方法/鉴权头/请求体/结果映射、缺 Key、HTTP 401、响应缺 `content` 三种失败路径。
+- 客户端：`node test/client.mjs` 用手写的最小 hooks 运行时渲染真实 `lib/client.js`，模拟选中「Ollama Web Fetch」并保存，断言写入 `web.fetchProvider`。
 - 端到端：用独立 profile 启动一套 DSH Web 实例，在真实界面里切换 Tavily、保存密钥，并检查 `cordis.patch.yml` 与 `.credentials.yaml` 的落盘结果。
 
 ## License

@@ -30,6 +30,22 @@ This plugin turns the source into a setting:
 | Zhipu Web Search | `search-zhipu` | `ZHIPU_API_KEY` | `https://open.bigmodel.cn/api/paas/v4/web_search` |
 | SearXNG (self-hosted) | `search-searxng` | `SEARXNG_API_KEY` (optional) | your instance + `/search` |
 
+## Supported fetch sources (web_fetch)
+
+The `web_fetch` provider is chosen on the same page; the built-in `http` fetcher and the Ollama fetcher need no config-file edits.
+
+| Option | Provider id | Default credential | Default endpoint |
+| --- | --- | --- | --- |
+| Built-in HTTP fetch (local) | `http` | none | built in |
+| Ollama Web Fetch | `fetch-ollama` | `OLLAMA_API_KEY` | `https://ollama.com/api/web_fetch` |
+| DeepSeek official · Fetch API | `deepseek-fetch-api` | DeepSeek search credential ref | built in |
+
+- **Built-in `http`** — fetches one URL locally and converts it to text. No key, no external dependency; a good default.
+- **`fetch-ollama`** — calls Ollama's fetch API and returns its extracted content and links, which is cleaner than local HTML-to-text; it shares `OLLAMA_API_KEY` with Ollama search.
+- **`deepseek-fetch-api`** — the built-in DeepSeek Fetch API; it needs a valid DeepSeek key, otherwise `web_fetch` fails with 401.
+
+> The built-in "Use the new Web Search API" switch rewrites **both** `searchProvider` and `fetchProvider` as a pair, so it cannot set fetch to `http` or `fetch-ollama` on its own. Use this page's fetch selection for combinations like "Ollama search + local fetch".
+
 ## Install
 
 Replace `<profile>` with your profile directory: on desktop usually `%DSH_HOME%\profiles\desktop`, for `dsh web` whichever profile that launch uses.
@@ -76,8 +92,9 @@ The restart is only for the first install; provider switches, keys, and limits a
 
 1. Plugins → Built-in plugin settings → Search source (or Settings → Built-in plugins → Search source).
 2. Pick a source. Third-party sources show an API key field; paste the key.
-3. Save. The "Active" line updates and the next `web_search` uses it.
-4. To go back: pick "DeepSeek official · Messages search" and save.
+3. Choose the **fetch provider** below it: built-in HTTP fetch, Ollama Web Fetch, or the DeepSeek Fetch API.
+4. Save. The "Active" line updates and the next `web_search` / `web_fetch` uses the new providers.
+5. To go back: pick "DeepSeek official · Messages search" and save.
 
 ![Search source page](docs/detail.png)
 
@@ -85,8 +102,8 @@ Advanced fields: results per search (1–20, default 5), timeout (5–120 s, def
 
 ## How it works
 
-- Host half (`lib/index.js`) registers eight search providers on `ctx.web`. Ids use a `search-` prefix so they never collide with the built-ins or with `dsh-web-search-ollama`'s `ollama`.
-- The settings page writes the chosen id into the `web` entry's `searchProvider` — the same mechanism as the official settings page — and config-editor applies it live.
+- Host half (`lib/index.js`) registers eight search providers and one fetch provider (`fetch-ollama`) on `ctx.web`. Ids use a `search-`/`fetch-` prefix so they never collide with the built-ins (`deepseek-official`, `deepseek-search-api`, `http`, `deepseek-fetch-api`) or with `dsh-web-search-ollama`'s `ollama`.
+- The settings page writes the chosen ids into the `web` entry's `searchProvider` / `fetchProvider` — the same mechanism as the official settings page — and config-editor applies it live.
 - API keys are resolved per search from the credentials service, so rotation needs no restart.
 - Browser half (`lib/client.js`) is a hand-written DSH client bundle registered into `plugins.item` and `settings.plugins.tab`; it requires only the platform `react`.
 
@@ -103,6 +120,7 @@ That plugin does run on the desktop: desktop and Web/CLI share one profile forma
 | HTTP 401 / 403 | Invalid or expired key, or no access to that service. |
 | SearXNG asks for an instance | Enter the instance root (no `/search`) in Advanced. |
 | `web_fetch` fails with `/v1/fetch` 404 (or search with `/v1/search`) | The built-in "Use the new Web Search API" switch is on with its base URL set to `https://ollama.com/v1`. Ollama only serves `POST /api/web_search`; it has no DeepSeek `/v1/search` or `/v1/fetch`. Turn that switch off (fetch returns to the local `http` provider) and search through Search source → Ollama instead. |
+| `web_fetch` fails with `HTTP 401 ... api key: sk-**** is invalid` | The fetch provider is still `deepseek-fetch-api` and the credentials store has no usable DeepSeek key. Pick the built-in `http` fetcher (no key) or `fetch-ollama` under Fetch provider and save. |
 | No Search source card | The plugin is not loaded; check Installed plugins and the toggle; restart after the first install. |
 
 ## License

@@ -1,7 +1,7 @@
 {
   "name": "dsh-web-search-switch",
-  "version": "0.1.0",
-  "description": "Switch the DeepSeek Harness web_search provider between DeepSeek official and third-party search APIs (Ollama, Tavily, Brave, Exa, Serper, Bocha, Zhipu, SearXNG) from a settings page.",
+  "version": "0.2.0",
+  "description": "Switch the DeepSeek Harness web_search source (DeepSeek official, Ollama, Tavily, Brave, Exa, Serper, Bocha, Zhipu, SearXNG) and the web_fetch source (local http, Ollama, DeepSeek Fetch API) from a settings page.",
   "type": "module",
   "main": "lib/index.js",
   "exports": {
@@ -12,12 +12,16 @@
   },
   "files": [
     "lib",
+    "test",
     "cordis.patch.yml",
     "README.md",
     "README.en.md",
     "docs",
     "scripts"
   ],
+  "scripts": {
+    "test": "node test/smoke.mjs && node test/client.mjs"
+  },
   "dsh": {
     "bundle": {
       "patch": "./cordis.patch.yml"
@@ -46,7 +50,9 @@
     "dsh-plugin",
     "deepseek-harness",
     "web-search",
+    "web-fetch",
     "search-provider",
+    "fetch-provider",
     "ollama",
     "tavily",
     "brave",
